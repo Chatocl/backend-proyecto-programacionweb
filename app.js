@@ -13,6 +13,7 @@ require('dotenv').config();
 const sequelize    = require('./database/config');
 const authRoutes   = require('./routes/auth');
 const recommendationRoutes = require('./routes/recommendation');
+const rekognitionRoutes = require('./routes/rekognition');
 var app = express();
 
 // view engine setup
@@ -35,6 +36,7 @@ app.use(express.json());
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/rekognition', rekognitionRoutes);
 // Sincronizar modelos y arrancar servidor
 sequelize.sync()
   .then(() => {

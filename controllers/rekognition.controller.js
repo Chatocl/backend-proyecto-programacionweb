@@ -1,51 +1,63 @@
 const AWS = require('aws-sdk');
+const { v4: uuidv4 } = require('uuid');
 
-// Configurar Rekognition
+// Config AWS
+const s3 = new AWS.S3({
+  region: process.env.AWS_REGION,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+});
+
 const rekognition = new AWS.Rekognition({
   region: process.env.AWS_REGION,
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
-// Análisis facial
-exports.detectFace = async (req, res) => {
+exports.analyzeFromUpload = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se proporcionó imagen' });
-    }
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: 'No se subió imagen' });
 
-    const params = {
-      Image: { Bytes: req.file.buffer },
+    const key = `uploads/${uuidv4()}_${file.originalname}`;
+
+    // Subir a S3
+    await s3.putObject({
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+    }).promise();
+
+    const imageUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+    // Preparar análisis con Rekognition
+    const s3params = {
+      Image: {
+        S3Object: {
+          Bucket: process.env.AWS_S3_BUCKET,
+          Name: key,
+        },
+      },
       Attributes: ['ALL']
     };
 
-    rekognition.detectFaces(params, (err, data) => {
+    rekognition.detectFaces(s3params, (err, data) => {
       if (err) {
-        console.error('Error en Rekognition:', err);
-        return res.status(500).json({ error: 'Error al analizar la imagen' });
+        console.error("Error en Rekognition:", err);
+        return res.status(500).json({ error: 'Error al analizar imagen' });
       }
 
       if (!data.FaceDetails.length) {
-        return res.status(404).json({ mensaje: 'No se detectaron rostros' });
+        return res.status(404).json({ message: 'No se detectaron rostros' });
       }
 
-      const face = data.FaceDetails[0];
-      const resultado = {
-        edad: `${face.AgeRange.Low} - ${face.AgeRange.High}`,
-        genero: face.Gender?.Value,
-        emociones: face.Emotions.map(e => ({
-          tipo: e.Type,
-          confianza: `${e.Confidence.toFixed(1)}%`
-        })),
-        sonriente: face.Smile?.Value,
-        gafas: face.Eyeglasses?.Value,
-        gafasSolares: face.Sunglasses?.Value
-      };
-
-      res.json(resultado);
+      const emocion = data.FaceDetails[0].Emotions?.[0]?.Type || 'UNKNOWN';
+      res.json({ emocion });
     });
+
   } catch (error) {
-    console.error('Excepción:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    console.error("Error general:", error);
+    res.status(500).json({ error: 'Error interno' });
   }
 };
