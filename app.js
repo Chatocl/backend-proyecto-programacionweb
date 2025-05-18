@@ -12,7 +12,7 @@ require('dotenv').config();
 
 const sequelize    = require('./database/config');
 const authRoutes   = require('./routes/auth');
-
+const recommendationRoutes = require('./routes/recommendation');
 var app = express();
 
 // view engine setup
@@ -28,12 +28,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
+
 app.use(cors({origin: '*'}));
 app.use(express.json());
 
 // Rutas
 app.use('/api/auth', authRoutes);
-
+app.use('/api/recommendations', recommendationRoutes);
 // Sincronizar modelos y arrancar servidor
 sequelize.sync()
   .then(() => {
