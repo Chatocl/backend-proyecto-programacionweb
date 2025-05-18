@@ -1,6 +1,15 @@
 const axios = require('axios');
 const qs = require('querystring');
 
+//h
+
+const jwt = require('jsonwebtoken');
+require('dotenv').config();
+const Recommendation     = require('../database/models/Recommendation');
+const RecommendationSong = require('../database/models/RecommendationSong');
+
+//fh
+
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
 
@@ -73,6 +82,24 @@ const getTopTracksByGenre = async (genre, token) => {
 };
 
 const getRecommendationsByEmotion = async (req, res) => {
+
+    // --- 1) Validar y decodificar JWT aquí mismo ---
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No se envió token de autorización' });
+  }
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return res.status(401).json({ error: 'Token inválido o expirado' });
+  }
+  const userId = decoded.id;  // asume que firmaste con payload { id, username }
+
+
+
+
   const emotion = (req.body.emotion || 'UNKNOWN').toUpperCase();
 
   const genres = emotionToGenres[emotion];
@@ -86,6 +113,17 @@ const getRecommendationsByEmotion = async (req, res) => {
       const tracks = await getTopTracksByGenre(genre, token);
       finalTracks.push(...tracks.slice(0, 2));
     }
+
+        // --- 3) Persistir en base de datos ---
+    const reco = await Recommendation.create({ userId, emotion });
+    const details = finalTracks.map(t => ({
+      recommendationId: reco.id,
+      title:            t.name,
+      artist:           t.artist,
+      url:              t.url,
+      genre:            t.genre
+    }));
+    await RecommendationSong.bulkCreate(details);
 
     res.json(finalTracks);
 

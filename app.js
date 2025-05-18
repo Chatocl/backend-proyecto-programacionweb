@@ -10,15 +10,43 @@ var usersRouter = require('./routes/users');
 var cors = require('cors');
 require('dotenv').config();
 
+//nuevo historial
+require('./database/models/Recommendation');
+require('./database/models/RecommendationSong');
+
+//fin historial
+
 const sequelize    = require('./database/config');
 const authRoutes   = require('./routes/auth');
 const recommendationRoutes = require('./routes/recommendation');
 const rekognitionRoutes = require('./routes/rekognition');
 var app = express();
 
+// ✅ Habilita CORS correctamente
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// ✅ Habilita las respuestas a preflight
+app.options('*', cors());
+
+
+
+//h
+const historyRoutes = require('./routes/history');
+// … justo antes de sequelize.sync():
+
+
+//fh
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
+
+//history
+app.use('/api/history', historyRoutes);
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -30,8 +58,13 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 
-app.use(cors({origin: '*'}));
-app.use(express.json());
+
+
+
+
+
+
+
 
 // Rutas
 app.use('/api/auth', authRoutes);
