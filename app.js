@@ -7,6 +7,12 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
+var cors = require('cors');
+require('dotenv').config();
+
+const sequelize    = require('./database/config');
+const authRoutes   = require('./routes/auth');
+
 var app = express();
 
 // view engine setup
@@ -21,6 +27,22 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+app.use(cors({origin: '*'}));
+app.use(express.json());
+
+// Rutas
+app.use('/api/auth', authRoutes);
+
+// Sincronizar modelos y arrancar servidor
+sequelize.sync()
+  .then(() => {
+    console.log('Base de datos conectada y sincronizada');
+    /*app.listen(process.env.PORT, () => {
+      console.log(`Servidor en http://localhost:${process.env.PORT}`);
+    });*/
+  })
+  .catch(err => console.error('Error al conectar DB:', err));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
