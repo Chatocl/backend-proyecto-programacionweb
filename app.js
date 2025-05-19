@@ -24,7 +24,7 @@ var app = express();
 
 // Habilita CORS correctamente
 app.use(cors({
-  origin: 'https://moodifycz.click/',
+  origin: 'https://moodifycz.click',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
