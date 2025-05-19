@@ -22,14 +22,14 @@ const recommendationRoutes = require('./routes/recommendation');
 const rekognitionRoutes = require('./routes/rekognition');
 var app = express();
 
-// ✅ Habilita CORS correctamente
+// Habilita CORS correctamente
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'https://moodifycz.click/',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// ✅ Habilita las respuestas a preflight
+// Habilita las respuestas a preflight
 app.options('*', cors());
 
 
